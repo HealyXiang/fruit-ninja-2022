@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=`, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div>
+      <canvas id="canvas" width="320" height="200">
+        This text is displayed if your browser does not support HTML5 Canvas.
+      </canvas>
+      <button id="btn">Add height</button>
+    </div>
+    <script>
+      var canvas, ctx;
+      canvas = document.getElementById("canvas");
+      canvas.height = 600;
+      ctx = canvas.getContext("2d");
+      const fruit = {
+        x: 0,
+        y: 0,
+      };
+      function init() {
+        // canvas = document.getElementById("canvas");
+        // ctx = canvas.getContext("2d");
+        draw();
+      }
+      function draw() {
+        //初始的样式（绘制状态）并绘制矩形
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.fillStyle = "#FA6900";
+        ctx.shadowOffsetX = 5;
+        ctx.shadowOffsetY = 5;
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = "rgba(204, 204, 204, 0.5)";
+        ctx.fillRect(fruit.x, fruit.y, 15, 15);
+        ctx.save(); //保存上述设置的绘制状态
+
+        //重新定义新的绘制状态，并绘制矩形
+        // ctx.fillStyle = "#E0E4CD";
+        // ctx.shadowOffsetX = 10;
+        // ctx.shadowOffsetY = 10;
+        // ctx.shadowBlur = 4;
+        // ctx.shadowColor = "rgba(204, 204, 204, 0.5)";
+        // ctx.fillRect(30, 0, 30, 150);
+        // ctx.save();
+
+        // // //绘制完之后，恢复到初始的绘制状态，继续进行绘画。并绘制圆形，并不会恢复初始状态下绘制的矩形。
+        // ctx.restore();
+        // ctx.beginPath();
+        // ctx.arc(305, 75, 8, 0, Math.PI * 2, true);
+        // ctx.closePath();
+        // ctx.fill();
+      }
+      init();
+
+      function loop(times, duration, callback) {
+        let leftTimes = times;
+        let timer = setInterval(() => {
+          if (leftTimes > 0) {
+            callback();
+            leftTimes--;
+          } else {
+            clearInterval(timer);
+            return;
+          }
+        }, duration);
+      }
+
+      function handleClick() {
+        loop(100, 300, () => {
+          fruit.y += 5;
+          draw();
+        });
+      }
+
+      const btn = document.getElementById("btn");
+      btn.addEventListener("click", handleClick);
+    </script>
+  </body>
+</html>
