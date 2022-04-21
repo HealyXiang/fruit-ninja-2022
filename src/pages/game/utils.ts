@@ -21,6 +21,23 @@ touchmove事件判断切中了水果
 通过水果圆点和鼠标坐标及半径判断
  */
 
+function loop(duration: number, callback: Function, times?: number) {
+  let leftTimes = times;
+  let timer: NodeJS.Timer;
+  timer = setTimeout(() => {
+    // if (leftTimes > 0) {
+    //   callback();
+    //   leftTimes--;
+    // } else {
+    //   clearInterval(timer);
+    //   return;
+    // }
+    callback();
+    clearTimeout(timer);
+    return loop(duration, callback);
+  }, duration);
+}
+
 class Fruit {
   id: number;
   type: string;
@@ -42,13 +59,28 @@ class Fruit {
 
   update() {
     const { x, y } = this.position;
-    this.position.y += y;
+    this.position.x += 4;
+    this.position.y += 10;
   }
 
-  draw() {}
+  draw(ctx: CanvasRenderingContext2D) {
+    const { x, y } = this.position;
+    ctx.beginPath();
+    ctx.fillStyle = "#FA6900";
+    ctx.shadowOffsetX = 5;
+    ctx.shadowOffsetY = 5;
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = "rgba(204, 204, 204, 0.5)";
+    ctx.fillRect(x, y, 15, 15);
+    // ctx.save();
+  }
 
   cut() {}
 }
+
+// class FruitsQueue {
+// TODO: 添加新的类
+// }
 
 export class Engine {
   newFruits: Fruit[];
@@ -56,8 +88,16 @@ export class Engine {
   totalScore: number;
   isPause: boolean;
   ctx: CanvasRenderingContext2D | null;
+  canvasWidth: number;
+  canvasHeight: number;
 
-  constructor(ctx: CanvasRenderingContext2D | null) {
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    canvasWidth: number,
+    canvasHeight: number
+  ) {
+    this.canvasWidth = canvasWidth;
+    this.canvasHeight = canvasHeight;
     this.newFruits = [];
     this.cuttedFruits = [];
     this.totalScore = 0;
@@ -69,19 +109,42 @@ export class Engine {
     if (!this.ctx) {
       return;
     }
-    const ctx = this.ctx;
-    ctx.clearRect(0, 0, 300, 200);
-    ctx.beginPath();
-    ctx.fillStyle = "#FA6900";
-    ctx.shadowOffsetX = 5;
-    ctx.shadowOffsetY = 5;
-    ctx.shadowBlur = 4;
-    ctx.shadowColor = "rgba(204, 204, 204, 0.5)";
-    ctx.fillRect(0, 0, 15, 15);
-    ctx.save();
+    const times = 20;
+    const duration = 1000 / 16;
+
+    let leftTimes = times;
+    const update = this.update;
+    // let timer = setInterval(() => {
+    //   if (leftTimes > 0) {
+    //     update.call(this);
+    //     leftTimes--;
+    //   } else {
+    //     clearInterval(timer);
+    //     return;
+    //   }
+    // }, duration);
+    loop(duration, update.bind(this));
   }
 
-  update() {}
+  update() {
+    if (!this.ctx) {
+      return;
+    }
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+    if (this.newFruits.length < 1) {
+      this.newFruits.push(new Fruit(20));
+    }
+    for (const i in this.newFruits) {
+      this.newFruits[i].update();
+      if (this.newFruits[i].position.y > this.canvasHeight) {
+        this.newFruits.splice(+i, 1);
+      }
+    }
+    for (const newFruit of this.newFruits) {
+      newFruit.draw(ctx);
+    }
+  }
 
   cut() {}
 }

@@ -11,8 +11,12 @@ export default function Game(): JSX.Element {
 
   useEffect(() => {
     if (ref.current) {
-      const ctx = (ref.current as HTMLCanvasElement)?.getContext("2d");
-      new Engine(ctx).start();
+      const canvas = ref.current as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        console.log("canvas.width:", canvas.width);
+        new Engine(ctx, canvas.width, canvas.height).start();
+      }
     }
   }, []);
   return (
