@@ -18,6 +18,9 @@ export default function Game(): JSX.Element {
         new Engine(ctx, canvas.width, canvas.height).start();
       }
     }
+    return () => {
+      ref.current = null;
+    };
   }, []);
   return (
     <main>

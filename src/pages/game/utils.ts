@@ -22,8 +22,25 @@ touchmove事件判断切中了水果
 通过水果圆点和鼠标坐标及半径判断
  */
 
+import rn from "random-number";
+
 const Canvas_Height = 400;
 const Canvas_Width = 300;
+const Half_Canvas_Width = Canvas_Width / 2;
+const Half_Canvas_Height = Canvas_Width / 2;
+
+const G = 30;
+const V_Range = { min: 100, max: 120 };
+const MinVy = Math.floor(Math.sqrt(G * Half_Canvas_Height));
+const MaxVy = Math.floor(Math.sqrt(2 * G * Canvas_Height));
+const meterToPixelRatio = 60;
+
+const earth = new Image();
+earth.src = "https://mdn.mozillademos.org/files/1429/Canvas_earth.png";
+
+function getCurrentTime(): number {
+  return new Date().getTime();
+}
 
 function loop(duration: number, callback: Function, times?: number) {
   let timer: NodeJS.Timer;
@@ -40,30 +57,54 @@ class Fruit {
   score: number;
   isCutted: boolean;
   icon: string;
+  initX: number;
   position: { x: number; y: number };
   radius: number;
-  speed: number;
+  speed: { vx: number; vy: number };
+  startTime: number;
 
   constructor(x: number) {
     this.id = 1;
     this.type = "apple";
     this.score = 20;
-    this.position = { x, y: Canvas_Height };
+    this.initX = x;
+    this.position = { x, y: 0 };
     this.isCutted = false;
     this.icon = "ddd";
     this.radius = 20;
-    this.speed = -10;
+    this.speed = this.getInitVelocity(x);
+    this.startTime = getCurrentTime();
+  }
+
+  getInitVelocity(positionX: number): { vx: number; vy: number } {
+    let vy = rn({ min: MinVy, max: MaxVy, integer: true });
+    vy = MaxVy - vy < 5 ? MaxVy - vy : vy;
+    let vx = 0;
+    if (positionX > Half_Canvas_Width) {
+      const mixVx = -Math.floor((positionX * G) / 2 / vy);
+      vx = rn({ min: mixVx, max: 0, integer: true });
+    } else {
+      const maxVx = Math.floor(((Canvas_Width - positionX) * G) / 2 / vy);
+      vx = rn({ min: 0, max: maxVx, integer: true });
+    }
+    return { vx, vy };
   }
 
   update() {
     const { x, y } = this.position;
+    const { vx, vy } = this.speed;
+    // console.table({ x, y });
+    const dt = (getCurrentTime() - this.startTime) / 1000;
+    // console.log("dt dt:", dt);
     if (this.isCutted) {
       // TODO:处理被切开的水果位置等
     } else {
-      if (y < 2 * this.radius) {
-        this.speed = -this.speed;
-      }
-      this.position.y += this.speed;
+      // if (y < 2 * this.radius) {
+      //   this.speed = -this.speed;
+      // }
+      // this.position.y += this.speed;
+      this.position.x = this.initX + vx * dt;
+      this.position.y = vy * dt - (Math.pow(dt, 2) * G) / 2;
     }
   }
 
@@ -77,11 +118,17 @@ class Fruit {
     // ctx.shadowColor = "rgba(204, 204, 204, 0.5)";
     // ctx.fillRect(x, y, 15, 15);
 
-    ctx.fillStyle = "#FA6900";
-    ctx.arc(x, y, this.radius, 0, Math.PI * 2, false);
-    ctx.fill();
-    ctx.restore();
+    // ctx.fillStyle = "#FA6900";
+    // ctx.arc(x, y, this.radius, 0, Math.PI * 2, false);
+    // ctx.fill();
+    ctx.drawImage(earth, x, y);
+    // ctx.restore();
     // ctx.save();
+    // const requestAnimationFrame = window.requestAnimationFrame;
+    // const that = this;
+    // requestAnimationFrame(() => {
+    //   that.draw.bind(that);
+    // });
   }
 
   cut() {}
@@ -143,10 +190,13 @@ class FruitsQueue {
   private getInitX(num: number) {
     // TODO: 优化 增加随机性
     let res = [];
-    const offset = 24;
-    const baseWidth = Math.floor(this.canvasWidth / num);
+    const offset = 40;
+    const baseWidth = Math.floor((Canvas_Width - offset) / num);
     for (let i = 0; i < num; i++) {
-      res.push(i * baseWidth + offset);
+      // res.push(i * baseWidth + offset);
+      res.push(
+        rn({ min: i * baseWidth, max: (i + 1) * baseWidth, integer: true })
+      );
     }
     return res;
   }
@@ -189,10 +239,24 @@ export class Engine {
     if (!this.ctx) {
       return;
     }
-    const FPS = 20;
+    const FPS = 10;
     const duration = 1000 / FPS;
 
-    const update = this.update;
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(0, Canvas_Height);
+    ctx.scale(1, -1);
+    // ctx.fillRect(50, 50, 20, 20); // 使用默认设置绘制一个矩形
+    // (function ff() {
+    //   console.log("start");
+    // })();
+    // ctx.save(); // 保存默认状态
+
+    // ctx.fillStyle = "#09F"; // 在原有配置基础上对颜色做改变
+    // ctx.fillRect(50, 200, 120, 120);
+
+    this.update();
+    // update();
     // let timer = setInterval(() => {
     //   if (leftTimes > 0) {
     //     update.call(this);
@@ -202,7 +266,9 @@ export class Engine {
     //     return;
     //   }
     // }, duration);
-    loop(duration, update.bind(this));
+    // loop(duration, update.bind(this));
+    // const requestAnimationFrame = window.requestAnimationFrame;
+    // requestAnimationFrame(update.bind(this));
   }
 
   update() {
@@ -211,19 +277,22 @@ export class Engine {
     }
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-    if (this.fruitsQueue.getNewFruits().length < 1) {
-      this.fruitsQueue.addNewFruits(5);
+    const currentCount = this.fruitsQueue.getNewFruits().length;
+    if (currentCount < 6) {
+      this.fruitsQueue.addNewFruits(6 - currentCount);
     }
     const newFruits = this.fruitsQueue.getNewFruits();
     for (let i = 0; i < newFruits.length; i++) {
       newFruits[i].update();
-      if (newFruits[i].position.y > this.canvasHeight) {
+      if (newFruits[i].position.y < 0) {
         this.fruitsQueue.deleteNewFruit(i);
       }
     }
     for (const newFruit of this.fruitsQueue.getNewFruits()) {
       newFruit.draw(ctx);
     }
+
+    requestAnimationFrame(this.update.bind(this));
   }
 
   cut() {}
