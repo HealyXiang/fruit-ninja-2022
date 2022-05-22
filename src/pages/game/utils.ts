@@ -219,6 +219,7 @@ export class Engine {
   canvasWidth: number;
   canvasHeight: number;
   fruitsQueue: FruitsQueue;
+  container: HTMLElement;
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -233,6 +234,7 @@ export class Engine {
     this.totalScore = 0;
     this.isPause = false;
     this.ctx = ctx;
+    this.container = document.getElementById("canvas") as HTMLElement; // TODO: 考虑是用canvas还是canvas的父元素作为container
   }
 
   start() {
@@ -254,6 +256,7 @@ export class Engine {
 
     // ctx.fillStyle = "#09F"; // 在原有配置基础上对颜色做改变
     // ctx.fillRect(50, 200, 120, 120);
+    this.setup();
 
     this.update();
     // update();
@@ -270,6 +273,32 @@ export class Engine {
     // const requestAnimationFrame = window.requestAnimationFrame;
     // requestAnimationFrame(update.bind(this));
   }
+
+  private setup() {
+    const container = this.container;
+
+    container.addEventListener("mousemove", this.onMouseMoveInContainer);
+  }
+
+  private onMouseMoveInContainer = (e: MouseEvent) => {
+    e.preventDefault();
+    const { clientX, clientY } = e;
+    console.log(clientX, clientY);
+    const newFruits = this.fruitsQueue.getNewFruits();
+    for (let i = 0; i < newFruits.length; i++) {
+      // TODO: 判断有没有被切中，通过鼠标位置和元素位置判断
+      const fruit = newFruits[i];
+      console.log("fruit position:");
+      console.log(fruit.position);
+      // newFruits[i].update();
+      // if (newFruits[i].position.y < 0) {
+      //   this.fruitsQueue.deleteNewFruit(i);
+      // }
+    }
+    //  this.fruitsQueue.getNewFruits()
+    // this.gameState.bladePositionX = e.clientX - this.offsetLeft;
+    // this.gameState.bladePositionY = e.clientY - this.offsetTop;
+  };
 
   update() {
     if (!this.ctx) {

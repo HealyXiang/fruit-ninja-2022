@@ -23,7 +23,7 @@ export default function Game(): JSX.Element {
     };
   }, []);
   return (
-    <main>
+    <main id="canvas-container">
       {/* Game Area */}
       <canvas id="canvas" width="300px" height="400px" ref={ref}>
         <p>Your browser does not support the canvas element!</p>
